@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAKO貓 - 苦逼的郭巧鈴作品集</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FFF9F0;
+            color: #5A4634;
+            overflow-x: hidden;
+        }
+        .nav-tab.active {
+            background-color: #FFD1D1;
+            color: white;
+            border-color: #FFD1D1;
+        }
+        /* 便籤樣式 */
+        .sticky-note {
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+            cursor: default;
+        }
+        /* 彈窗背景模糊 */
+        #info-modal { display: none; backdrop-filter: blur(6px); }
+        #info-modal.active { display: flex; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #FFD1D1; border-radius: 10px; }
+        
+        /* 展開日誌內容 */
+        .expanded .cultivation-content { display: block; }
+    </style>
+</head>
+<body class="selection:bg-[#FFD1D1] min-h-screen relative">
+
+    <nav class="sticky top-0 z-50 bg-[#FFF9F0]/80 backdrop-blur-md border-b border-[#EAD7BB] mb-8">
+        <div class="max-w-6xl mx-auto flex flex-wrap justify-center p-4 gap-2 md:gap-4">
+            <button onclick="switchTab('portfolio')" id="tab-portfolio" class="nav-tab active px-4 py-2 rounded-full border-2 border-[#FFD1D1] font-bold transition-all text-xs md:text-base">作品集 🐾</button>
+            <button onclick="switchTab('comments')" id="tab-comments" class="nav-tab px-4 py-2 rounded-full border-2 border-[#FFD1D1] font-bold transition-all text-xs md:text-base">評論版 📝</button>
+            <button onclick="switchTab('vote')" id="tab-vote" class="nav-tab px-4 py-2 rounded-full border-2 border-[#FFD1D1] font-bold transition-all text-xs md:text-base">投票區 🏆</button>
+            <button onclick="switchTab('devlog')" id="tab-devlog" class="nav-tab px-4 py-2 rounded-full border-2 border-[#FFD1D1] font-bold transition-all text-xs md:text-base">開發日誌 🛠️</button>
+        </div>
+    </nav>
+
+    <!-- 作品集分頁 -->
+    <main id="content-portfolio" class="max-w-7xl mx-auto px-6 relative z-10">
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold mb-2">NAKO貓</h1>
+            <p class="text-[#8B735B]">作者: 被怪隊友欺負的苦逼郭巧鈴 | 介紹: NAKO貓專題的影片小天地~</p>
+        </div>
+        <div id="video-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-y-12 gap-x-8"></div>
+    </main>
+
+    <!-- 評論版分頁 -->
+    <main id="content-comments" class="max-w-7xl mx-auto px-6 relative z-10 hidden">
+        <div class="bg-white rounded-3xl p-8 shadow-sm border-2 border-[#EAD7BB] mb-12 max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">留下你的足跡🐾</h2>
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <input type="text" id="comment-name" placeholder="你的暱稱..." class="flex-1 px-4 py-3 rounded-xl border-2 border-[#FFF9F0] focus:border-[#FFD1D1] outline-none bg-[#FFF9F0]/30">
+                <button onclick="addComment()" class="px-10 py-3 bg-[#FFD1D1] text-white font-bold rounded-full hover:bg-[#FF9E9E] shadow-md transition-colors">送出留言 🐾</button>
+            </div>
+            <textarea id="comment-text" rows="3" placeholder="想對 NAKO 貓說什麼呢？" class="w-full px-4 py-3 rounded-xl border-2 border-[#FFF9F0] focus:border-[#FFD1D1] outline-none bg-[#FFF9F0]/30 resize-none"></textarea>
+        </div>
+        <div id="sticky-notes-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-20"></div>
+    </main>
+
+    <!-- 投票區分頁 -->
+    <main id="content-vote" class="max-w-5xl mx-auto px-6 relative z-10 hidden">
+        <div class="bg-white rounded-3xl p-8 shadow-sm border-2 border-[#EAD7BB] mb-12">
+            <h2 class="text-2xl font-bold mb-10 text-center">為你喜翻的影片投一票！🐾</h2>
+            <div id="vote-buttons-grid" class="grid grid-cols-2 sm:grid-cols-5 gap-6 mb-16"></div>
+            <div class="border-t border-[#FFF9F0] pt-10">
+                <h3 class="text-xl font-bold mb-8 text-center">NAKO宇宙影片人氣排行榜 📊</h3>
+                <div id="vote-chart-container" class="space-y-6"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 開發日誌分頁 -->
+    <main id="content-devlog" class="max-w-5xl mx-auto px-6 relative z-10 hidden">
+        <div class="bg-white rounded-3xl p-12 shadow-sm border-2 border-[#EAD7BB] text-center">
+            <h2 class="text-3xl font-bold mb-12">🛠️ 開發日誌</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <button onclick="showDevLog('concept')" class="group flex flex-col items-center">
+                    <div class="w-20 h-20 mb-4 transition-transform group-hover:scale-110"><img src="https://img.icons8.com/papercut/120/cat-footprint.png" class="w-full h-full object-contain"></div>
+                    <span class="font-bold px-4 py-2 bg-[#FFF9F0] border-2 border-[#FFD1D1] rounded-full text-[#FF9E9E]">設計理念</span>
+                </button>
+                <button onclick="showDevLog('prompts')" class="group flex flex-col items-center">
+                    <div class="w-20 h-20 mb-4 transition-transform group-hover:scale-110"><img src="https://img.icons8.com/papercut/120/cat-footprint.png" class="w-full h-full object-contain"></div>
+                    <span class="font-bold px-4 py-2 bg-[#FFF9F0] border-2 border-[#FFD1D1] rounded-full text-[#FF9E9E]">關鍵提示詞</span>
+                </button>
+                <button onclick="showDevLog('solving')" class="group flex flex-col items-center">
+                    <div class="w-20 h-20 mb-4 transition-transform group-hover:scale-110"><img src="https://img.icons8.com/papercut/120/cat-footprint.png" class="w-full h-full object-contain"></div>
+                    <span class="font-bold px-4 py-2 bg-[#FFF9F0] border-2 border-[#FFD1D1] rounded-full text-[#FF9E9E]">問題解決紀錄</span>
+                </button>
+                <button onclick="showDevLog('reflection')" class="group flex flex-col items-center">
+                    <div class="w-20 h-20 mb-4 transition-transform group-hover:scale-110"><img src="https://img.icons8.com/papercut/120/cat-footprint.png" class="w-full h-full object-contain"></div>
+                    <span class="font-bold px-4 py-2 bg-[#FFF9F0] border-2 border-[#FFD1D1] rounded-full text-[#FF9E9E]">自我心得</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 通用彈窗 -->
+    <div id="info-modal" class="fixed inset-0 z-[100] items-center justify-center bg-black/50 p-4">
+        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden relative border-4 border-[#FFD1D1] flex flex-col max-h-[90vh]">
+            <button onclick="closeModal()" class="absolute top-4 right-4 z-10 bg-[#FFD1D1] text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#FF9E9E] transition-colors font-bold">✕</button>
+            <div class="p-8 overflow-y-auto custom-scrollbar">
+                <h2 id="modal-title" class="text-2xl font-bold text-[#5A4634] mb-6 border-b-2 border-[#FFF9F0] pb-2"></h2>
+                <div id="modal-content" class="text-[#7C6249] leading-relaxed whitespace-pre-wrap"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center mt-24 pb-12 text-[#B99976] font-bold">© 2024 NAKO貓 作品集</footer>
+
+    <script>
+        const videos = [
+            { id: 1, title: "NEKO的秘密", videoId: "Dyza-Mz3eE8", description: "主角NEKO是一隻受鄰里鄰居貓咪愛戴的家貓，受眾喵追捧的他十分的維護自己的形象。可是有一天…牠的偶包受到巨大的威脅!", votes: 0 },
+            { id: 2, title: "外星研究", videoId: "RSS9wwDiadg", description: "主角二咪睡的正香時，天外飛來一到光~在睜眼自己正身處一個陌生的飛船之中!?外星生物凌玖居然為了作業綁架了良家婦咪!", votes: 0 },
+            { id: 3, title: "混混千金夢", videoId: "wS4T4GAo_kU", description: "威風凜凜的浪浪頭子彪哥正帶著小弟巡視領地，但小弟胡鬧中不小心把老大撞到了異世界是怎麼回事?", votes: 0 },
+            { id: 4, title: "兩小無拆", videoId: "DD-LRQePcg8", description: "小帕與潘潘是從小打到大的好友，可隨著年紀流逝兩咪即將分開了…但朋友會因現實距離而分開嗎?", votes: 0 },
+            { id: 5, title: "星湖傳說", videoId: "ssznBtiaPQw", description: "千金小姐小天從紙醉金迷的城市到了樸素的邊境村莊的經歷居然敢變了牠的喵生體悟!?", votes: 0 },
+            { id: 6, title: "最後的暮色", videoId: "RojHCgzC438", description: "身為藝術家Day的居然無法視物!?但上帝在關上窗的同時也給了一個心給牠，讓牠在Mhok的陪伴下學會了”用心去看世界”。", votes: 0 },
+            { id: 7, title: "異世之憶", videoId: "E0eD1QGWDR4", description: "桑卡與深深_兩隻平凡的貓卻有個神奇的經歷。讓我們看看迷糊深深與穩重桑卡兩喵到了異世界會有什麼搞笑經歷~", votes: 0 },
+            { id: 8, title: "風與風車", videoId: "zfjtFB3MqtI", description: "無方向的風遇到了不轉動的風車，風慢慢地找到了歸宿；風車慢慢地轉動。”風車沒有風便轉不了；風沒有風車會毫無方向感”", votes: 0 },
+            { id: 9, title: "BOSS", videoId: "ZnibdWS568c", description: "在人人懼怕的恐怖副本有趣的另一面!來跟著BOSS身邊的貓咪一起看看副本中BOSS私底下不一樣的另一面~", votes: 0 },
+            { id: 10, title: "雙生反抗", videoId: "VpmjL4Gm6Bs", description: "動物們寧靜的山林生活被人們打擾，山上的貓兄弟景光與景逸利用了貓妖的傳說讓人們不再對大自然不敬。", votes: 0 }
+        ];
+
+        let comments = JSON.parse(localStorage.getItem('nako_comments')) || [];
+        let savedVotes = JSON.parse(localStorage.getItem('nako_votes'));
+        if (savedVotes) videos.forEach(v => { const found = savedVotes.find(sv => sv.id === v.id); if(found) v.votes = found.votes; });
+
+        function switchTab(tab) {
+            ['portfolio', 'comments', 'vote', 'devlog'].forEach(t => {
+                const el = document.getElementById(`content-${t}`);
+                const btn = document.getElementById(`tab-${t}`);
+                if(el) el.classList.add('hidden');
+                if(btn) btn.classList.remove('active');
+            });
+            const activeEl = document.getElementById(`content-${tab}`);
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            if(activeEl) activeEl.classList.remove('hidden');
+            if(activeBtn) activeBtn.classList.add('active');
+            
+            if(tab === 'vote') updateVoteChart();
+            if(tab === 'comments') renderComments();
+        }
+
+        const modal = document.getElementById('info-modal');
+        function closeModal() { modal.classList.remove('active'); }
+        modal.addEventListener('click', (e) => { if(e.target === modal) closeModal(); });
+
+        function openModalUI(title, contentHTML) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-content').innerHTML = contentHTML;
+            modal.classList.add('active');
+        }
+
+        function showDevLog(type) {
+            switch(type) {
+                case 'concept':
+                    openModalUI("設計理念", `清新得手繪風是作者最愛嘿嘿~\nNAKO貓是我的專題名稱，專題內的影片部分是我從零開始努力的產物，可惜...\n專題展時無法好好全部的展示出來!\n我的孩子們...嗚嗚嗚~｡ﾟヽ(ﾟ´Д\`)ﾉﾟ｡\n所以這網站來了!哈哈哈哈哈~`);
+                    break;
+                case 'prompts':
+                    openModalUI("關鍵提示詞", `
+                        <p class="mb-4 font-bold text-red-400 text-lg">提示詞修煉歷程</p>
+                        <div class="space-y-3">
+                            ${[
+                                {level:'煉氣', content:'我是個做自媒體的人 想做一個自己的作品集(網站畫風為清新可案的貓咪手繪風) \n網頁標題"NAKO貓" 網頁文字"作者:苦逼的郭巧鈴 介紹:NAKO貓的影片小天地~"\n作品集有10部影片連結文字與影片介紹(之後放入10個影片連結)設定連結為兩排貓爪按鈕'},
+                                {level:'結丹', content:'設計個頁面標籤"評論版" \n點擊標籤進入一個留言板的頁面，頁面最上面有可以輸入"暱稱"、"留言"的欄位；留言送出後每則留言以便利貼的形式生成在畫面上 。\n便利貼五個一排且有顏色變化'},
+                                {level:'元嬰', content:'設計個頁面標籤"投票區" \n點擊標籤進入一個投票區的頁面，頁面最上面有十個有影片名的貓爪按鈕；按下該貓爪一次後該影片的票數會加一。\n十個按鈕下方有個長條圖計算著各影片的票數；影片排序方式是以票數遞減的方式排'},
+                                {level:'大乘', content:'最難的祈願頁\n背景天燈升天的循環動畫與筆記紙背景欄位，天燈任意飄浮且防重疊，隨字數調整大小。\n經歷六七版的微調，最終美化天燈顏色、大小與排版。\n(註：此功能後因技術問題出錯後多次考量後已移除，但為修煉之巔峰)'},
+                                {level:'飛升', content:'最終優化。移除祈願分頁，重構程式碼結構。\n將所有組件整合進單一檔案，確保 RWD 響應式佈局，並優化數據儲存邏輯，達成最終的作品集完整型態。'}
+                            ].map(item => `
+                                <div class="border-2 border-[#FFF9F0] rounded-xl overflow-hidden bg-[#FFF9F0]/30 cultivation-item">
+                                    <button onclick="this.parentElement.classList.toggle('expanded')" class="w-full text-left px-4 py-2 font-bold text-[#FF9E9E] flex justify-between items-center hover:bg-[#FFD1D1]/10">
+                                        <span>等級：${item.level}</span><span class="text-xs">展開</span>
+                                    </button>
+                                    <div class="px-4 py-3 text-sm text-[#7C6249] border-t border-[#FFF9F0] cultivation-content hidden">${item.content}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `);
+                    break;
+                case 'solving':
+                    openModalUI("問題解決紀錄", `1. 影片無法在網站內觀看，改為自動切換到 YouTube 觀看。\n2. 之前祈願分頁的天燈功能因技術限制與排版考量已移除。\n3. 不小心打錯內容...重新弄啊~不然回不去 QAQ。\n4. 最大的問題就是手殘，會不小心送出錯誤的或未完成的提示詞...然後就無限輪迴的修改修改修改.....`);
+                    break;
+                case 'reflection':
+                    openModalUI("自我心得", `這份作品集不僅是我過去努力的縮影，更是我對 NAKO 貓系列影片的情感延伸。\n這次製作網頁，不僅圓了我想好好展示這些作品的心願，更在技術上挑戰了自我。\n我特別加入了投票與評論功能，希望讓每一位進來參觀的朋友都能產生互動，而不只是單向的瀏覽。\n看著這些作品在網頁上完美呈現，心裡真的充滿了說不出的滿足感——真的太可愛了！\n這段創作過程雖然忙碌，但看到成果後的療癒感，讓一切都值得了。`);
+                    break;
+            }
+        }
+
+        function renderComments() {
+            const container = document.getElementById('sticky-notes-container');
+            if(!container) return;
+            container.innerHTML = '';
+            comments.slice().reverse().forEach(c => {
+                const note = document.createElement('div');
+                note.className = 'sticky-note p-4 aspect-square flex flex-col justify-between rounded-sm text-sm';
+                note.style.backgroundColor = c.color || '#FFF9C4';
+                note.style.transform = `rotate(${c.rotate || 0}deg)`;
+                note.innerHTML = `<div class="overflow-y-auto custom-scrollbar h-full">${c.text}</div><div class="mt-2 text-right font-bold text-[10px] border-t border-black/5 pt-1">— ${c.name} 🐾</div>`;
+                container.appendChild(note);
+            });
+        }
+
+        function addComment() {
+            const nEl = document.getElementById('comment-name');
+            const tEl = document.getElementById('comment-text');
+            const n = nEl.value.trim();
+            const t = tEl.value.trim();
+            if(!n || !t) return;
+            comments.push({ name: n, text: t, color: ['#FFF9C4', '#F1F8E9', '#E1F5FE', '#F3E5F5', '#FFF3E0', '#FFEBEE'][Math.floor(Math.random()*6)], rotate: (Math.random()*6-3) });
+            saveData(); renderComments();
+            nEl.value = ''; tEl.value = '';
+        }
+
+        function initApp() {
+            const grid = document.getElementById('video-grid');
+            if(grid) {
+                videos.forEach(v => {
+                    const el = document.createElement('div');
+                    el.className = 'flex flex-col items-center group';
+                    el.innerHTML = `<a href="https://www.youtube.com/watch?v=${v.videoId}" target="_blank" class="flex flex-col items-center"><div class="w-24 h-24 md:w-32 md:h-32 mb-3 transition-transform group-hover:scale-110"><img src="https://img.icons8.com/papercut/120/cat-footprint.png" alt="cat icon"></div><span class="text-sm font-bold group-hover:text-[#FF9E9E]">${v.title}</span></a><button onclick="openVideoInfo(${v.id})" class="text-[10px] px-3 py-1 bg-white border border-[#FFD1D1] text-[#FF9E9E] rounded-full mt-2">介紹</button>`;
+                    grid.appendChild(el);
+                });
+            }
+            const voteGrid = document.getElementById('vote-buttons-grid');
+            if(voteGrid) {
+                videos.forEach(v => {
+                    const b = document.createElement('button');
+                    b.className = 'flex flex-col items-center transition-transform hover:scale-105 group';
+                    b.onclick = () => { v.votes++; saveData(); updateVoteChart(); };
+                    b.innerHTML = `<div class="w-12 h-12 mb-2"><img src="https://img.icons8.com/papercut/80/cat-footprint.png" alt="cat icon"></div><span class="text-[10px] border border-[#EAD7BB] px-2 py-1 rounded-lg group-hover:bg-[#FFD1D1] group-hover:text-white transition-colors text-center w-full">${v.title}</span>`;
+                    voteGrid.appendChild(b);
+                });
+            }
+        }
+
+        function openVideoInfo(id) {
+            const v = videos.find(x => x.id === id);
+            if(v) openModalUI(v.title, v.description);
+        }
+
+        function updateVoteChart() {
+            const container = document.getElementById('vote-chart-container');
+            if(!container) return;
+            container.innerHTML = '';
+            const sorted = [...videos].sort((a, b) => b.votes - a.votes);
+            const max = Math.max(...videos.map(v => v.votes), 1);
+            sorted.forEach((v, i) => {
+                container.innerHTML += `<div class="flex flex-col gap-1"><div class="flex justify-between text-xs font-bold px-1"><span>${i+1}. ${v.title}</span><span>${v.votes} 票</span></div><div class="w-full bg-[#FFF9F0] h-3 rounded-full overflow-hidden border border-[#EAD7BB]/20"><div class="h-full bg-gradient-to-r from-[#FFD1D1] to-[#FF9E9E] transition-all duration-700" style="width: ${(v.votes/max)*100}%"></div></div></div>`;
+            });
+        }
+
+        function saveData() {
+            localStorage.setItem('nako_comments', JSON.stringify(comments));
+            localStorage.setItem('nako_votes', JSON.stringify(videos.map(v => ({ id: v.id, votes: v.votes }))));
+        }
+
+        window.onload = () => { initApp(); renderComments(); updateVoteChart(); };
+    </script>
+</body>
+</html>
